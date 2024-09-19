@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import math
 from torch import nn
 
+
 '''
     图片大小
 '''
@@ -27,7 +28,7 @@ beta_max = 0.02
 '''
     时间步数
 '''
-interation_times = 100
+interation_times = 1000
 
 
 Device = "cuda" if torch.cuda.is_available() else "cpu"
