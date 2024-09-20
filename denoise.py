@@ -50,7 +50,8 @@ def backward_denoise(model,batch_x_t):
 
 
 if __name__ == '__main__':
-    model = torch.load('model.pt')
+    model = torch.load('./Model/model.pt')
+
     batch_size = 2
     batch_x_t = torch.randn(size=(batch_size,3,img_size,img_size))
 

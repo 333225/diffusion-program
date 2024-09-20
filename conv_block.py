@@ -8,14 +8,19 @@
 from setting import *
 from torch import nn
 
+
+'''
+    卷积层
+
+'''
 class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels,time_emb_size):
         super().__init__()
 
         self.seq1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1,padding=1),# 改变通道数，不变大小
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1,padding=1),# 改变通道数，不变大小 卷积核3x3
+            nn.BatchNorm2d(out_channels), # 批量归一层
+            nn.ReLU() # 激活函数
         )
 
         # time时刻emb添加到channel
@@ -33,6 +38,8 @@ class ConvBlock(nn.Module):
         t_emb = self.relu(self.time_emb_liner(t_emb)).view(x.size(0),x.size(1),1,1)  # t_emb:(batch_size,out_channels,1,1)
         #通道数不变 大小不变
         return self.seq2(x+t_emb)
+
+
 
 
 

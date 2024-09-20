@@ -10,26 +10,30 @@ from encode_time import *
 from dataset import *
 
 class Unet(nn.Module):
-    def __init__(self,img_channels,channels=[64,128,256,512,1024],time_emb_size = 256):
+    def __init__(self,img_channels,channels=[32,64,128,256,512,1024],time_emb_size = 256):
         super().__init__()
+
+        # [3,32,64,128,256,512,1024]
         channels = [img_channels] + channels
         print('图像通道数',img_channels)
 
         # 时间进行转向量化
         self.time_emb = nn.Sequential(
-            TimePositionEncoding(time_emb_size),
-            nn.Linear(time_emb_size,time_emb_size),
+            TimePositionEncoding(time_emb_size), # [一共256个元素]
+            nn.Linear(time_emb_size,time_emb_size), # 输入输出保持一样
             nn.ReLU()
         )
 
         # 卷积层通道数增加一倍
         self.enc_convs = nn.ModuleList()
         for i in range(len(channels) - 1):
-            self.enc_convs.append(ConvBlock(channels[i],channels[i+1],time_emb_size))
+            self.enc_convs.append(ConvBlock(channels[i],channels[i+1],time_emb_size)) # 添加卷积模块到列表
 
         # 下采样后，图像大小减少一般
         self.max_pool = nn.ModuleList()
-        for i in range(len(channels) - 2):
+        # 下降到1024 便不再继续
+        for i in range(len(channels) - 1):
+            # 池化核2x2 步长为2
             self.max_pool.append(nn.MaxPool2d(kernel_size=2,stride=2,padding=0))
 
         #  上采样 通道数减半
@@ -49,19 +53,24 @@ class Unet(nn.Module):
         t_emb = self.time_emb(t)
 
 
+        # 用于跳跃链接
         residual = []
 
+        # 编码器
         for i,conv in enumerate(self.enc_convs):
-            x = conv(x,t_emb)
+            x = conv(x,t_emb) # 执行卷积
             if i!=len(self.enc_convs)-1:
-                residual.append(x)
-                x = self.max_pool[i](x)
-
+                residual.append(x) # 保留用于解码
+                x = self.max_pool[i](x) # 下采样
+        # 解码器
         for i,deconv in enumerate(self.deconvs):
+            # 反卷积
             x = deconv(x)
+            # 获取之前的栈中的特征用于链接
             residual_x = residual.pop(-1)
             x = self.dec_convs[i](torch.cat((residual_x,x),dim=1),t_emb)
 
+        # 还原通道数
         return self.output(x)
 
 if __name__ == '__main__':
